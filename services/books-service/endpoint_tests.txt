@@ -1,0 +1,21 @@
+Testing the endpoints 
+
+# Get all books
+curl http://localhost:5000/books
+
+# Get a specific book
+curl http://localhost:5000/books/1
+
+# Add a new book
+curl -X POST http://localhost:5000/books -H "Content-Type: application/json" -d '{"title": "New Book", "author": "New Author", "genre": "Fiction"}'
+
+# Delete book by ID 
+curl -X DELETE http://localhost:5000/books/1
+
+#Update book 
+curl -X PUT http://localhost:5000/books/2 -H "Content-Type: application/json" -d '{"available": false}'
+
+
+# Verifying Changes in Database 
+psql -U postgres -d library_db
+SELECT * FROM books; 
