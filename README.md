@@ -1,0 +1,1 @@
+A containerized microservices-based library application built with Flask and deployed on AWS using ECS Fargate, Aurora PostgreSQL, and Cognito authentication. Includes Infrastructure as Code, CI/CD pipelines, and monitoring to demonstrate production-ready cloud engineering practices
