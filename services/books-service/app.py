@@ -24,7 +24,7 @@ class Book(db.Model):
     author = db.Column(db.String(255), nullable=False)
     genre = db.Column(db.String(100), nullable=False)
     available = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
 
 # Create tables
 with app.app_context():
