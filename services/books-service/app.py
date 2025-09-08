@@ -33,7 +33,7 @@ class Book(db.Model):
         # Make HTTP request to borrow service
         # import requests
         try:
-            response = requests.get(f'http://localhost:5002/borrows/book/{self.id}')
+            response = requests.get(f'http://borrow-service:5002/borrows/book/{self.id}')
             if response.status_code == 200:
                 borrows = response.json()
                 # Check if any active borrows exist
