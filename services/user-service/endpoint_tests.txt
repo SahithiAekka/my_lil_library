@@ -1,0 +1,156 @@
+Testing the User Service endpoints 
+
+## 1. Home/Health Check (GET /)
+
+### Request
+```bash
+curl http://localhost:5000/
+```
+
+### Expected Response (Success - 200 OK)
+```json
+{
+  "message": "Hello, Welcome to User Service!"
+}
+```
+
+## 2. Register a New User (POST /register)
+
+### Request
+```bash
+curl -X POST \
+  http://localhost:5000/register \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "username": "john_doe",
+    "password": "mypassword123",
+    "first_name": "John",
+    "last_name": "Doe"
+  }'
+```
+
+### Expected Response (Success - 201 Created)
+```json
+{
+  "data": {
+    "created_at": "2023-10-27T10:00:00.000000",
+    "first_name": "John",
+    "last_name": "Doe",
+    "username": "john_doe"
+  },
+  "message": "User registered successfully"
+}
+```
+
+### Expected Response (Username already exists - 400 Bad Request)
+```json
+{
+  "message": "Username already exists. Please choose a different username."
+}
+```
+
+### Expected Response (Missing fields - 400 Bad Request)
+```json
+{
+  "message": "Username, password, first_name, and last_name are required to register"
+}
+```
+
+## 3. Login User (POST /login)
+
+### Request
+```bash
+curl -X POST \
+  http://localhost:5000/login \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "username": "john_doe",
+    "password": "mypassword123"
+  }'
+```
+
+### Expected Response (Success - 200 OK)
+```json
+{
+  "message": "Login successful",
+  "token": "eyJ...", 
+  "user": {
+    "first_name": "John",
+    "last_name": "Doe",
+    "username": "john_doe"
+  }
+}
+```
+
+### Expected Response (Invalid credentials - 401 Unauthorized)
+```json
+{
+  "message": "Invalid username or password"
+}
+```
+
+### Expected Response (Missing fields - 400 Bad Request)
+```json
+{
+  "message": "Username and password are required to login"
+}
+```
+
+## 4. Get All Users (GET /users)
+
+### Request
+```bash
+curl http://localhost:5000/users
+```
+
+### Expected Response (Success - 200 OK)
+```json
+[
+  {
+    "created_at": "2023-10-27T10:00:00.000000",
+    "first_name": "John",
+    "last_name": "Doe",
+    "username": "john_doe"
+  },
+  {
+    "created_at": "2023-10-27T11:00:00.000000",
+    "first_name": "Jane",
+    "last_name": "Smith",
+    "username": "jane_smith"
+  }
+]
+```
+
+### Expected Response (No users - 200 OK with empty array)
+```json
+[]
+```
+
+## 5. Get Specific User by Username (GET /users/<username>)
+
+### Request
+```bash
+curl http://localhost:5000/users/john_doe
+```
+
+### Expected Response (Success - 200 OK)
+```json
+{
+  "created_at": "2023-10-27T10:00:00.000000",
+  "first_name": "John",
+  "last_name": "Doe",
+  "username": "john_doe"
+}
+```
+
+### Expected Response (User not found - 404 Not Found)
+```json
+{
+  "message": "User not found"
+}
+```
+
+## 6. Verifying Changes in Database 
+```bash
+psql -U postgres -d library_db -c "SELECT * FROM users;"
+```
