@@ -1,0 +1,152 @@
+# Endpoint Tests for Borrow Service
+
+## 1. Borrow a Book (POST /borrowbook)
+
+### Request
+```bash
+curl -X POST \
+  http://127.0.0.1:5002/borrowbook \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "username": "testuser",
+    "book_id": 1
+  }'
+```
+
+### Expected Response (Success - 201 Created)
+```json
+{
+  "book_id": 1,
+  "borrow_date": "2023-10-27T10:00:00.000000",
+  "id": 1,
+  "returned": false,
+  "username": "testuser"
+}
+```
+
+### Expected Response (Book already borrowed - 409 Conflict)
+```json
+{
+  "message": "Book is already borrowed"
+}
+```
+
+### Expected Response (Missing fields - 400 Bad Request)
+```json
+{
+  "message": "Username and book_id are required"
+}
+```
+
+## 2. Return a Book (POST /return)
+
+### Request
+```bash
+curl -X POST \
+  http://127.0.0.1:5002/return \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "username": "testuser",
+    "book_id": 1
+  }'
+```
+
+### Expected Response (Success - 200 OK)
+```json
+{
+  "book_id": 1,
+  "id": 1,
+  "returned": true,
+  "username": "testuser"
+}
+```
+
+### Expected Response (No active borrow found - 404 Not Found)
+```json
+{
+  "message": "No active borrow found for this user and book"
+}
+```
+
+## 3. Get All Borrows (GET /borrows)
+
+### Request
+```bash
+curl -X GET http://127.0.0.1:5002/borrows
+```
+
+### Expected Response (Success - 200 OK)
+```json
+[
+  {
+    "book_id": 1,
+    "borrow_date": "2023-10-27T10:00:00.000000",
+    "id": 1,
+    "returned": false,
+    "username": "testuser"
+  },
+  {
+    "book_id": 2,
+    "borrow_date": "2023-10-27T11:00:00.000000",
+    "id": 2,
+    "returned": true,
+    "username": "anotheruser"
+  }
+]
+```
+
+### Expected Response (No borrows - 200 OK with empty array)
+```json
+[]
+```
+
+## 4. Get Borrows by Book (GET /borrows/book/<book_id>)
+
+### Request
+```bash
+curl -X GET http://127.0.0.1:5002/borrows/book/1
+```
+
+### Expected Response (Success - 200 OK)
+```json
+[
+  {
+    "book_id": 1,
+    "borrow_date": "2023-10-27T10:00:00.000000",
+    "id": 1,
+    "returned": false,
+    "username": "testuser"
+  }
+]
+```
+
+### Expected Response (No borrows for book - 200 OK with empty array)
+```json
+[]
+```
+
+## 5. Get Borrows by User (GET /borrows/user/<username>)
+
+### Request
+```bash
+curl -X GET http://127.0.0.1:5002/borrows/user/testuser
+```
+
+### Expected Response (Success - 200 OK)
+```json
+[
+  {
+    "book_id": 1,
+    "borrow_date": "2023-10-27T10:00:00.000000",
+    "id": 1,
+    "returned": false,
+    "username": "testuser"
+  }
+]
+```
+
+### Expected Response (No active borrows for user - 404 Not Found)
+```json
+{
+  "message": "No active borrows found for user: testuser"
+} 
