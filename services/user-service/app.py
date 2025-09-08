@@ -1,9 +1,10 @@
 import os 
 import jwt  
 from flask import Flask, jsonify, request
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
+from werkzeug.security import generate_password_hash, check_password_hash
 
 # Load environment variables
 load_dotenv()
@@ -28,8 +29,8 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.now)
 
 # Create tables
-with app.app_context():
-    db.create_all()
+# with app.app_context(): # This line is removed as per the edit hint
+#     db.create_all()
 
 # Home route 
 @app.route('/', methods=['GET'])
@@ -53,10 +54,13 @@ def register():
     if existing_user:
         return jsonify(message="Username already exists. Please choose a different username."), 400
     
+    # Hash the password
+    hashed_password = generate_password_hash(password)
+    
     # Create new user
     new_user = User(
         username=username, 
-        password=password,
+        password=hashed_password,
         first_name=first_name,
         last_name=last_name
     )
@@ -82,32 +86,35 @@ def login():
         return jsonify(message="Username and password are required to login"), 400
     
     # Find user
-    user = User.query.filter_by(username=username, password=password).first()
-    if user:
-        # Generate JWT token
-        token = jwt.encode({
+    user = User.query.filter_by(username=username).first() # Retrieve user by username only
+    
+    if not user or not check_password_hash(user.password, password):
+        return jsonify(message="Invalid username or password"), 401
+        
+    # Generate JWT token
+    token = jwt.encode({
+        'username': user.username,
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'exp': datetime.now(timezone.utc) + timedelta(hours=24)
+    }, app.config['SECRET_KEY'], algorithm='HS256')
+    
+    return jsonify({
+        'message': 'Login successful',
+        'token': token,
+        'user': {
             'username': user.username,
             'first_name': user.first_name,
-            'last_name': user.last_name,
-            'exp': datetime.utcnow() + timedelta(hours=24)
-        }, app.config['SECRET_KEY'], algorithm='HS256')
-        
-        return jsonify({
-            'message': 'Login successful',
-            'token': token,
-            'user': {
-                'username': user.username,
-                'first_name': user.first_name,
-                'last_name': user.last_name
-            }
-        }), 200
-    else:
-        return jsonify(message="Invalid credentials"), 401
+            'last_name': user.last_name
+        }
+    }), 200
 
 # Get all users
 @app.route('/users', methods=['GET'])
 def get_users():
     users = User.query.all()
+    if not users:
+        return jsonify(message="No users yet!"), 200 # Return 200 OK with a message
     return jsonify([{
         'username': user.username,
         'first_name': user.first_name,
@@ -130,4 +137,6 @@ def get_user(username):
 
 # Run the app
 if __name__ == '__main__':
+    with app.app_context():
+        db.create_all() # Ensure tables are created when running the app directly
     app.run(host="0.0.0.0", port=5001, debug=True)
