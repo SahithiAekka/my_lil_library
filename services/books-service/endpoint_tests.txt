@@ -4,7 +4,7 @@ Testing the endpoints
 curl http://localhost:5000/books
 
 # Get a specific book
-curl http://localhost:5000/books/1
+curl http://localhost:5000/books/1 
 
 # Add a new book
 curl -X POST http://localhost:5000/books -H "Content-Type: application/json" -d '{"title": "New Book", "author": "New Author", "genre": "Fiction"}'
