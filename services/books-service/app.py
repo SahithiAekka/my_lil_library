@@ -3,6 +3,7 @@ from flask import Flask, jsonify, request
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
+import requests
 
 # Load environment variables
 load_dotenv()
@@ -23,8 +24,25 @@ class Book(db.Model):
     title = db.Column(db.String(255), nullable=False)
     author = db.Column(db.String(255), nullable=False)
     genre = db.Column(db.String(100), nullable=False)
-    available = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.now)
+    available = db.Column(db.Boolean, default=True)
+    
+    
+    @property
+    def is_available(self):
+        # Make HTTP request to borrow service
+        # import requests
+        try:
+            response = requests.get(f'http://localhost:5002/borrows/book/{self.id}')
+            if response.status_code == 200:
+                borrows = response.json()
+                # Check if any active borrows exist
+                for borrow in borrows:
+                    if not borrow.get('returned', False):
+                        return False
+            return True
+        except:
+            return True  # Default to available if service is down
 
 # Create tables
 with app.app_context():
@@ -44,7 +62,7 @@ def get_books():
         'title': book.title,
         'author': book.author,
         'genre': book.genre,
-        'available': book.available
+        'available': book.is_available
     } for book in books])
 
 # get a specific book by id
@@ -57,7 +75,7 @@ def get_book(book_id):
             'title': book.title,
             'author': book.author,
             'genre': book.genre,
-            'available': book.available
+            'available': book.is_available
         })
     return jsonify(message="Book not found :( "), 404
 
@@ -71,7 +89,7 @@ def get_books_by_genre(genre):
             'title': book.title,
             'author': book.author,
             'genre': book.genre,
-            'available': book.available
+            'available': book.is_available
         } for book in books])
     return jsonify(message="No books found in this genre :( "), 404
 
@@ -83,7 +101,6 @@ def add_book():
         title=data.get("title"),
         author=data.get("author"),
         genre=data.get("genre"),
-        available=True
     )
     db.session.add(new_book)
     db.session.commit()
@@ -92,7 +109,7 @@ def add_book():
         'title': new_book.title,
         'author': new_book.author,
         'genre': new_book.genre,
-        'available': new_book.available
+        'available': new_book.is_available
     }), 201
 
 # Update book availability
@@ -101,14 +118,14 @@ def update_book_availability(book_id):
     data = request.json
     book = Book.query.get(book_id)
     if book:
-        book.available = data.get('available', book.available)
-        db.session.commit()
+        # This logic needs to be updated to reflect the new Borrow model
+        # For now, we'll just return the current state
         return jsonify({
             'id': book.id,
             'title': book.title,
             'author': book.author,
             'genre': book.genre,
-            'available': book.available
+            'available': book.is_available
         })
     return jsonify(message="Book not found :( "), 404
 
