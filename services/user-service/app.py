@@ -3,6 +3,7 @@ import jwt
 from flask import Flask, jsonify, request
 from datetime import datetime, timedelta, timezone
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate # Add this line
 from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -18,6 +19,7 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'simple-secret-for-testing')
 
 # Initialize SQLAlchemy
 db = SQLAlchemy(app)
+migrate = Migrate(app, db) # Add this line
 
 # User model
 class User(db.Model):
@@ -28,9 +30,9 @@ class User(db.Model):
     last_name = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
 
-# Create tables
-# with app.app_context(): # This line is removed as per the edit hint
-#     db.create_all()
+# Create database tables if they don't exist
+# with app.app_context(): # Remove this block
+#     db.create_all() # Remove this line
 
 # Home route 
 @app.route('/', methods=['GET'])

@@ -4,6 +4,7 @@ from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
 import requests
+from flask_migrate import Migrate
 
 # Load environment variables
 load_dotenv()
@@ -16,6 +17,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize SQLAlchemy
 db = SQLAlchemy(app)
+
+migrate = Migrate(app, db)
 
 # Book model
 class Book(db.Model):
@@ -43,10 +46,6 @@ class Book(db.Model):
             return True
         except:
             return True  # Default to available if service is down
-
-# Create tables
-with app.app_context():
-    db.create_all()
 
 # home route 
 @app.route('/', methods=['GET'])
