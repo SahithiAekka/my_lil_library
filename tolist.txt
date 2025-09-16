@@ -1,0 +1,71 @@
+General Updates Across All Services:
+
+*   **Dependency Management:**
+    *   Pin all Python dependencies to specific versions (e.g., `Flask==2.3.3`) in `requirements.txt`.
+    *   Consider separating production dependencies from development/testing dependencies into separate `requirements.txt` files (e.g., `requirements-prod.txt`, `requirements-dev.txt`).
+
+*   **Dockerfile Improvements:**
+    *   Remove redundant `RUN echo` commands.
+    *   Integrate a production-ready WSGI server like Gunicorn by adding it to `requirements.txt` and updating the `CMD` instruction to use Gunicorn.
+    *   Implement running the container as a non-root user for enhanced security.
+    *   Add a `HEALTHCHECK` instruction to the Dockerfiles.
+
+*   **Database Table Creation/Management:**
+    *   Consider integrating a database migration tool (e.g., Flask-Migrate) for robust schema management in production environments, moving away from `db.create_all()` on every application startup.
+
+books-service` Specific Updates:
+
+*   **`app.py`:**
+    *   **`is_available` Property:** Enhance error handling when the `borrow-service` is unreachable, rather than defaulting to `True`. Consider a more explicit "unavailable" status or appropriate error propagation.
+    *   **`update_book_availability` Endpoint:** Refactor or remove this endpoint. Book availability should ideally be determined solely by the `borrow-service` records.
+    *   **API Clarity:** Change the path for getting books by genre to be more explicit, e.g., `/books/genre/<string:genre>` instead of `/books/<string:genre>` to avoid ambiguity with `GET /books/<int:book_id>`.
+    *   **Input Validation:** Add more comprehensive input validation for the `add_book` endpoint (e.g., checking for non-empty strings, data types).
+
+*   **`test_books.py`:**
+    *   **Refactor Tests:** Rewrite tests to use Flask's `app.test_client()` for unit testing, isolating the application logic.
+    *   **Pytest Fixtures:** Utilize `pytest` fixtures for proper database setup and teardown to ensure test isolation and repeatability.
+    *   **Mock Inter-service Communication:** Mock calls to the `borrow-service` (if any are directly made from `books-service` in tests) to avoid external dependencies.
+    *   **Expand Test Coverage:** Add tests for all endpoints (add, update, delete, get all, get by genre), including positive and negative test cases.
+
+*   **`endpoint_tests.txt`:**
+    *   Consider adding more example scenarios for manual testing.
+
+## `user-service` Specific Updates:
+
+*   **`app.py`:**
+    *   **Secret Key Handling:** Ensure the `SECRET_KEY` is always securely configured in production and remove the insecure default value. The application should fail to start if not properly set.
+    *   **User Management Endpoints:** Consider adding endpoints for updating user profiles and deleting user accounts.
+    *   **Input Validation:** Implement more extensive input validation (e.g., password strength requirements, username format validation).
+    *   **Rate Limiting:** Add rate-limiting mechanisms to `/register` and `/login` endpoints to prevent brute-force attacks.
+    *   **CORS Configuration:** Plan for CORS configuration to allow a frontend UI to interact with this service securely.
+
+*   **`requirements.txt`:**
+    *   Explicitly include `Werkzeug` in the `requirements.txt` file, as it's directly used for password hashing.
+
+*   **`test_user.py`:**
+    *   **Expand Test Coverage:** Add tests for `GET /users` and `GET /users/<string:username>` endpoints.
+    *   **JWT Token Validation:** Consider adding assertions to validate the content and signature of the generated JWT token in login tests.
+
+*   **`endpoint_tests.txt`:**
+    *   **Correct Port Number:** Update all `curl` commands to use `http://127.0.0.1:5001` instead of `http://localhost:5000` to reflect the correct port for the `user-service`.
+
+## `borrow-service` Specific Updates:
+
+*   **`app.py`:**
+    *   **Inter-service Communication (Validation):** Implement calls to `user-service` and `books-service` to validate the existence of the `username` and `book_id` before processing borrow and return requests.
+    *   **Error Handling for External Calls:** Add robust error handling for calls to `user-service` and `books-service` (e.g., handling service unavailability).
+    *   **`get_borrows_by_user`:** Consider adding a query parameter to allow retrieving all historical borrows for a user (active and returned), in addition to just active ones.
+    *   **Input Validation:** Implement more extensive input validation (e.g., ensuring `book_id` is a positive integer).
+    *   **Authentication/Authorization:** Implement authentication and authorization for all endpoints, especially `borrow_book` and `return_book`, likely requiring JWT tokens.
+
+*   **`test_borrow.py`:**
+    *   **Expand Test Coverage:** Add tests for all missing scenarios, including:
+        *   Attempting to borrow an already borrowed book.
+        *   Successful return of a book.
+        *   Attempting to return a non-borrowed or already returned book.
+        *   Testing with missing `username` or `book_id`.
+        *   Tests for `GET /borrows` and `GET /borrows/book/<int:book_id>`.
+    *   **Mock Inter-service Communication:** If validation calls to `user-service` and `books-service` are added, mock these external calls in unit tests.
+
+*   **`endpoint_tests.txt`:**
+    *   Consider adding `psql` commands for database verification, similar to the other services' `endpoint_tests.txt` files.
